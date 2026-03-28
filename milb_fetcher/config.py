@@ -75,6 +75,16 @@ def get_high_value_keywords() -> List[str]:
     return [k.strip() for k in value.split(',') if k.strip()] if value else []
 
 
+def get_proxy() -> Optional[str]:
+    """获取代理地址，未配置返回 None"""
+    return get_config('FETCHER_PROXY')
+
+
+def get_output_dir() -> str:
+    """获取输出目录"""
+    return get_config('FETCHER_OUTPUT_DIR', '~/.openclaw/workspace/military-bidding')
+
+
 def get_regions() -> Dict[str, str]:
     """获取地区字典"""
     value = get_config('FETCHER_REGIONS')
