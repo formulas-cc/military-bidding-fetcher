@@ -37,40 +37,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 
 # 从配置模块加载默认参数
-from .config import get_keywords, get_exclude_keywords, get_high_value_keywords, get_regions, get_proxy, get_output_dir
-
-# 连通性缓存：None=未检测，True=需要代理，False=直连可达
-_use_proxy: Optional[bool] = None
-
-
-def _check_connectivity(test_url: str = "https://www.weain.mil.cn", timeout: int = 5) -> bool:
-    """检测是否可直连目标站点"""
-    try:
-        requests.get(test_url, timeout=timeout, proxies=None)
-        return True
-    except Exception:
-        return False
-
-
-def _resolve_proxies() -> Optional[dict]:
-    """
-    决定本次使用直连还是代理（结果缓存，整个运行周期只检测一次）：
-    - 直连可达 → 返回 None
-    - 直连不可达 → 返回代理字典（若未配置代理则返回 None，请求自然报错）
-    """
-    global _use_proxy
-    if _use_proxy is None:
-        _use_proxy = not _check_connectivity()
-        if _use_proxy:
-            print("[INFO] 直连不可达，启用代理访问")
-        else:
-            print("[INFO] 直连可达，直接访问")
-    if not _use_proxy:
-        return None
-    proxy_url = get_proxy()
-    if not proxy_url:
-        return None
-    return {'http': proxy_url, 'https': proxy_url}
+from .config import get_keywords, get_exclude_keywords, get_high_value_keywords, get_regions, get_proxies, get_output_dir
 
 
 def _clean_description(text):
@@ -227,7 +194,7 @@ def fetch_weain_bidding(
         url = f"https://www.weain.mil.cn/api/front/list/cggg/list?LMID=1149231276155707394&pageNo=1&purchaseType={encoded_ptype}&_t={_t}"
         
         try:
-            resp = requests.get(url, timeout=10, proxies=_resolve_proxies())
+            resp = requests.get(url, timeout=10, proxies=get_proxies())
             data = resp.json()
             content_list = data.get('list', {}).get('contentList', [])
             
@@ -362,7 +329,7 @@ def fetch_military_bidding(
             }
             
             try:
-                resp = requests.get(base_url, params=params, headers=headers, timeout=10, proxies=_resolve_proxies())
+                resp = requests.get(base_url, params=params, headers=headers, timeout=10, proxies=get_proxies())
                 data = resp.json()
                 items = data.get('data', [])
                 
@@ -520,7 +487,7 @@ def _fetch_nudt_page(page: int) -> List[Dict]:
         url = f"https://www.nudt.edu.cn/cgxx/index{page-1}.htm"
     
     try:
-        resp = requests.get(url, timeout=10, proxies=_resolve_proxies())
+        resp = requests.get(url, timeout=10, proxies=get_proxies())
         resp.encoding = 'utf-8'
         html = resp.text
         
@@ -640,7 +607,7 @@ def _get_weain_latest_date() -> str:
         
         # 获取公开招标第一页，检查最新日期
         url = f"https://www.weain.mil.cn/api/front/list/cggg/list?LMID=1149231276155707394&pageNo=1&purchaseType=%E5%85%AC%E5%BC%80%E6%8B%9B%E6%A0%87&_t={_t}"
-        resp = requests.get(url, timeout=10, proxies=_resolve_proxies())
+        resp = requests.get(url, timeout=10, proxies=get_proxies())
         data = resp.json()
         content_list = data.get('list', {}).get('contentList', [])
         
@@ -656,7 +623,7 @@ def _get_nudt_latest_date() -> str:
     """获取国防科大采购信息网的最新发布日期"""
     try:
         url = "https://www.nudt.edu.cn/cgxx/index.htm"
-        resp = requests.get(url, timeout=10, proxies=_resolve_proxies())
+        resp = requests.get(url, timeout=10, proxies=get_proxies())
         resp.encoding = 'utf-8'
         html = resp.text
         

@@ -75,9 +75,15 @@ def get_high_value_keywords() -> List[str]:
     return [k.strip() for k in value.split(',') if k.strip()] if value else []
 
 
-def get_proxy() -> Optional[str]:
-    """获取代理地址，未配置返回 None"""
-    return get_config('FETCHER_PROXY')
+def get_proxies() -> Optional[dict]:
+    """返回 requests 用的 proxies 字典，FETCHER_USE_PROXY=true 时生效，否则返回 None"""
+    use_proxy = get_config('FETCHER_USE_PROXY', 'false').lower() == 'true'
+    if not use_proxy:
+        return None
+    proxy_url = get_config('FETCHER_PROXY')
+    if not proxy_url:
+        return None
+    return {'http': proxy_url, 'https': proxy_url}
 
 
 def get_output_dir() -> str:
