@@ -3,8 +3,9 @@
 """
 配置加载模块 (milb-fetcher)
 
-从 .env 文件读取配置，缺失时使用默认值
-只加载 FETCHER_* 前缀的配置
+按优先级读取 .env 配置，缺失时使用默认值：
+  1. ~/.config/milb-fetcher/.env  （用户全局配置）
+  2. ./.env                        （当前运行目录，最高优先级）
 """
 
 from pathlib import Path
@@ -20,25 +21,35 @@ DEFAULTS = {
 }
 
 
+def _parse_env_file(path: Path) -> Dict:
+    """解析单个 .env 文件，返回配置字典"""
+    config = {}
+    with open(path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, value = line.split('=', 1)
+                config[key.strip()] = value.strip()
+    return config
+
+
 def load_config() -> Dict:
     """
-    从 .env 文件加载配置
+    按优先级加载 .env 配置，后加载的优先级更高：
+    1. ~/.config/milb-fetcher/.env  （用户全局配置）
+    2. ./.env                        （当前运行目录，最高优先级）
 
     Returns:
-        Dict: 配置字典，包含所有配置项
+        Dict: 合并后的配置字典
     """
-    env_path = Path(__file__).parent / '.env'
+    candidates = [
+        Path.home() / '.config' / 'milb-fetcher' / '.env',
+        Path.cwd() / '.env',
+    ]
     config = {}
-
-    if env_path.exists():
-        with open(env_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith('#'):
-                    if '=' in line:
-                        key, value = line.split('=', 1)
-                        config[key.strip()] = value.strip()
-
+    for path in candidates:
+        if path.exists():
+            config.update(_parse_env_file(path))
     return config
 
 
