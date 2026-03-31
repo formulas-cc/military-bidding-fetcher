@@ -707,7 +707,7 @@ def fetch_all_bidding(
     if output_path is None:
         output_dir = os.path.expanduser(get_output_dir())
         os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, f'商机信息汇总_{file_date}.xlsx')
+        output_path = os.path.join(output_dir, f'军队采购商机汇总_{file_date}.xlsx')
     
     # 获取全军武器装备采购信息网数据（使用其最新日期）
     print(f"[INFO] 开始抓取全军武器装备采购信息网 - 日期: {weain_date}")
